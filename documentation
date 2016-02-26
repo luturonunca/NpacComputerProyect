@@ -1,3 +1,22 @@
-Pixel scale axis
+## Pixel scale axis (Size in degrees of one pixel)
 CDELT1  =   -0.002777777777778 / [] WCS: Pixel scale axis 1, unit=Angle         
 CDELT2  = 0.002777777777777778 / [] WCS: Pixel scale axis 2, unit=Angle
+## Data regarding the HERSCHEL detector
+Wavelength (micrometers):   250         350         500
+theta_nep (arcsec):         17.6        23.9        35.2
+theta_nep (degrees):        0.0048      0.006638    0.0097
+## Explanation by Alex
+Our goal should be to identify the sources, and make a catalog with the PSF's.
+Broadly speaking, there are two ways of approaching this:
+    1. Treat the images (different lambda) separately. This would lead to
+       a not-so-complete catalog.
+    2. Treat the images simultaneously. Look for a source in one of the
+       maps and then try to fit thye model by looking at the others. (I didn't
+    understand this part very well).
+One of our first outputs should be something like figure 1 in the paper.
+## To do
+- The filter still gives some nans
+- Rescale the axes, since the filtered maps are still dominated by the things
+  the borders.
+- To make the catalogue, in pronciple we should find maxima on the map, and
+  identify whether it's a legit source (PSF).
