@@ -1,0 +1,3 @@
+Pixel scale axis
+CDELT1  =   -0.002777777777778 / [] WCS: Pixel scale axis 1, unit=Angle         
+CDELT2  = 0.002777777777777778 / [] WCS: Pixel scale axis 2, unit=Angle
