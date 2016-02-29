@@ -52,7 +52,7 @@ def main():
     # Plot the figures; the min and the max values are reset in some of them
     # for visualization purposes.
     pixels = None
-    fig, main_axes = plt.subplots(1,3, sharex=True, sharey=True, figsize=(15,5))
+    fig, main_axes = plt.subplots(1,3)#, sharex=True, sharey=True, figsize=(15,5))
     #main_axes[0][0].imshow(mex, origin="lower", interpolation="None")
     #main_axes[0][0].set_title("MexHat kernel")
            
@@ -60,8 +60,9 @@ def main():
     main_axes[0].imshow(m_mex_S,origin="lower", interpolation="None")
     main_axes[0].set_title("Convolution with MexHat for S")
     
-
-    main_axes[1].imshow(m_mex_M, origin="lower", interpolation="None")
+    mama = library.transform(m_mex_S,"S")
+    
+    main_axes[1].imshow(mama, origin="lower", interpolation="None")
     main_axes[1].set_title("Convolution with MexHat for M")
     
     #main_axes[1].imshow(m_gauss, origin="lower", interpolation="None")

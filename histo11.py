@@ -38,7 +38,7 @@ def main():
     filename = "OD1271_0x50012da8L_SpirePhotoLargeScan_PLCK_SZ_G004.5-19.6-1_destriped_PMW.fits"
 
     # Load the data
-    fits_data = fits.getdata(path+filename,"coverage")
+    fits_data = fits.getdata(path+filename,"image")
     # Remove zeros and NaNs from data
     data1d = np.ravel(fits_data)
     datanonan = data1d[~np.isnan(data1d)]

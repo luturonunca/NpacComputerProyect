@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from astropy.io import fits
 from astropy.convolution import Gaussian2DKernel, MexicanHat2DKernel, convolve
 import os
-
+plt.ion()
 # Create masked array
 def create_marray(image):
     mask = np.zeros((len(image), len(image[0])), dtype=bool)
@@ -27,54 +27,61 @@ def main():
             
     # Variables for the filename
     path = "/home/abeelen/Herschel/DDT_mustdo_5/PLCK_SZ_G004.5-19.6-1/"
-    filename = "OD1271_0x50012da8L_SpirePhotoLargeScan_PLCK_SZ_G004.5-19.6-1_destriped_PMW.fits"
+    filename = "OD1271_0x50012da8L_SpirePhotoLargeScan_PLCK_SZ_G004.5-19.6-1_destriped_PSW.fits"
             
     # Load the data
-    fits_data = fits.getdata(path+filename,"image")
-    fits_coverage = fits.getdata(path+filename,"coverage")
-
+    fits_data_uncut = fits.getdata(path+filename,"image")
+    fits_coverage_uncut = fits.getdata(path+filename,"coverage")
+    # Define cuts
+    ycenter = int(len(fits_data_uncut)/2)
+    xcenter = int(len(fits_data_uncut[0])/2)
+    cut = 70
+    # Cut array to focus on center
+    fits_data = fits_data_uncut[xcenter-cut:xcenter+cut,ycenter-cut:ycenter+cut]
+    fits_coverage = fits_coverage_uncut[xcenter-cut:xcenter+cut,ycenter-cut:ycenter+cut]
+    
     # Create masked array from fits_data
     m_array = create_marray(fits_data)
     # Create masked array from fits_data maskin with coverage
     mask_coverage = m_array.mask * fits_coverage
     above = fits_coverage > 8
     
-    image = above * fits_data
+    image = (above * fits_data)
     print "Lenghts ", len(above), len(above[0])
 
             
     # Make the Mexican hat kernel and convolve
     # The values given to the kernels should be 1.7328, 2.3963, 3.5270
     # for S, M and L.
-    mex = MexicanHat2DKernel(2.3963)
-    w = convolve(image, mex, boundary = 'extend')
-    m_mex = ma.masked_array(w, ~m_array.mask)
+    mex = MexicanHat2DKernel(1.7328)
+    mex_convol = convolve(image, mex, boundary = 'extend')
+    m_mex = ma.masked_array(mex_convol, ~m_array.mask)
     #c_mex = np.multiply(w, m_array.mask)
             
     # Make the gaussian kernel and convolve
-    gauss = Gaussian2DKernel(stddev=3)
-    z = convolve(image, gauss, boundary='extend')
-    m_gauss= ma.masked_array(w, ~m_array.mask)
+    gauss = Gaussian2DKernel(stddev=1.7328)
+    gauss_convol = convolve(image, gauss, boundary='extend')
+    m_gauss= ma.masked_array(gauss_convol, ~m_array.mask)
     #c_gauss = np.multiply(z, m_array.mask)
             
     # Plot the figures; the min and the max values are reset in some of them
     # for visualization purposes.
     pixels = None
-    fig, main_axes = plt.subplots(2,2)
-    main_axes[0][0].imshow(mex, origin="lower", interpolation="None")
-    main_axes[0][0].set_title("MexHat kernel")
+    fig, main_axes = plt.subplots(1,3, sharex=True, sharey=True, figsize=(15,5))
+    #main_axes[0][0].imshow(mex, origin="lower", interpolation="None")
+    #main_axes[0][0].set_title("MexHat kernel")
            
             
-    main_axes[0][1].imshow(m_mex, vmin=0.0, vmax=0.05,\
+    main_axes[0].imshow(m_mex,\
                            origin="lower", interpolation="None")
-    main_axes[0][1].set_title("Convolution with MexHat")
+    main_axes[0].set_title("Convolution with MexHat")
             
-    main_axes[1][0].imshow(m_gauss, origin="lower", interpolation="None")
-    main_axes[1][0].set_title("Convolution with gaussian")
+    main_axes[1].imshow(m_gauss, origin="lower", interpolation="None")
+    main_axes[1].set_title("Convolution with gaussian")
            
            
-    main_axes[1][1].imshow(image, origin="lower", interpolation="None")
-    main_axes[1][1].set_title("Data")
+    main_axes[2].imshow(image, origin="lower", interpolation="None")
+    main_axes[2].set_title("Data")
             
     plt.show()
             
