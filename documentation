@@ -15,8 +15,15 @@ Broadly speaking, there are two ways of approaching this:
     understand this part very well).
 One of our first outputs should be something like figure 1 in the paper.
 ## To do
-- The filter still gives some nans
+- The filter still gives some nans (DONE)
 - Rescale the axes, since the filtered maps are still dominated by the things
   the borders.
 - To make the catalogue, in pronciple we should find maxima on the map, and
   identify whether it's a legit source (PSF).
+## Explanation by Alex (Monday)
+  One has positive values on HERSCHEL maps because it's "kind of a relative
+  measurement". What happens is that the detector sets the mean of the
+  distribution to zero. Then, one gets a (gaussian-ish?) distribution of
+  the flux centered at zero, and the actual sources will lie on the right
+  tail of this spectrum. The things that look like negative sources after
+  filtering should be removed (mostly lying on the borders).

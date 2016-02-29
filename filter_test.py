@@ -41,40 +41,53 @@ def main():
     mex = MexicanHat2DKernel(2.3963)
     w = convolve(fits_data, mex, boundary = 'extend')
     m_mex = ma.masked_array(w, m_array.mask)
-    c_mex = np.multiply(w, m_array.mask)
-    print c_mex
+    #c_mex = np.multiply(w, m_array.mask)
     
     # Make the gaussian kernel and convolve
     gauss = Gaussian2DKernel(stddev=3)
     z = convolve(fits_data, gauss, boundary='extend')
     m_gauss= ma.masked_array(w, m_array.mask)
-    c_gauss = np.multiply(z, m_array.mask)
+    #c_gauss = np.multiply(z, m_array.mask)
     
     # Plot the figures; the min and the max values are reset in some of them
     # for visualization purposes.
-    pixels = None
-    fig, main_axes = plt.subplots(2,2)
-    main_axes[0][0].imshow(mex, origin="lower", interpolation="None")
-    main_axes[0][0].set_title("MexHat kernel")
+    #pixels = None
+    #fig, main_axes = plt.subplots(2,2)
+    #main_axes[0][0].imshow(mex, origin="lower", interpolation="None")
+    #main_axes[0][0].set_title("MexHat kernel")
    
     
-    main_axes[0][1].imshow(m_mex, vmin=-0.1, vmax=0.05,\
-                           origin="lower", interpolation="None")
-    main_axes[0][1].set_title("Convolution with MexHat")
+    #main_axes[0][1].imshow(m_mex, vmin=-0.1, vmax=0.05,\
+    #                       origin="lower", interpolation="None")
+    #main_axes[0][1].set_title("Convolution with MexHat")
     
-    main_axes[1][0].imshow(m_gauss, origin="lower", interpolation="None")
-    main_axes[1][0].set_title("Convolution with gaussian")
+    #main_axes[1][0].imshow(m_gauss, origin="lower", interpolation="None")
+    #main_axes[1][0].set_title("Convolution with gaussian")
    
    
-    main_axes[1][1].imshow(fits_data, origin="lower", interpolation="None")
-    main_axes[1][1].set_title("Data")
+    #main_axes[1][1].imshow(fits_data, origin="lower", interpolation="None")
+    #main_axes[1][1].set_title("Data")
     
-    plt.show()
+    #plt.show()
     
     mean_data = (np.nanmax(fits_data) - np.nanmin(fits_data))/2
     print "Mean", mean_data, "\nMax", np.nanmax(fits_data),\
           "\nMin", np.nanmin(fits_data)
     
+    ## Plotting the histogram
+    print "Histogram part"
+    mex_1d = m_mex.ravel()
+    histo = mex_1d[~np.isnan(mex_1d)]
+    indices = histo < 0
+    histo[indices] = 0
+    indices = histo > 0.004
+    histo[indices] = 0
+    print histo
+    #bin_values, bin_boundaries = np.histogram(mex_1d[~np.isnan(mex_1d)], 200)
+    plt.hist(histo, 200)
+    plt.show()
+
+
     #ma.compressed()
     #header = fits_data
     #print header
