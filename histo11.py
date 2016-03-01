@@ -68,7 +68,6 @@ def main():
     yaux = [(-6. * dispersion) for i in range(len(x))]
     plt.plot(yaux,gaussian_fit(x, maxvalue, background, dispersion), 'g-') 
 
-    print get_gauss_sigma(data)
     plt.show()
 
 

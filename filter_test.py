@@ -10,7 +10,6 @@ from astropy.convolution import Gaussian2DKernel, MexicanHat2DKernel, convolve
 import os
 import library
 plt.ion()
-# Create masked array
 
 def main():
     wavelength_range = sys.argv[1]
@@ -61,12 +60,6 @@ def main():
     print "Mean", mean_data, "\nMax", np.nanmax(fits_data),\
           "\nMin", np.nanmin(fits_data)
     
-    
-
-
-    #ma.compressed()
-    #header = fits_data
-    #print header
     return 0
 
 if __name__ == '__main__':
