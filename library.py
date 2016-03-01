@@ -14,9 +14,34 @@ from astropy.convolution import Gaussian2DKernel, MexicanHat2DKernel, convolve
 import os
 from scipy.optimize import curve_fit
 
+def get_FWHM(wl):
+    if wl == "S":
+        fwhm = 17.6
+    elif wl == "M":
+        fwhm = 23.9
+    elif wl == "L":
+        fwhm = 35.2
+    else:
+        print "ERROR!! not a know image"
+        fwhm = -1000
+    return fwhm
+
+def get_pixFWHM(wl):
+    """
+    gets Full Width Maximun for the diferent images
+    """
+    if wl == "S":
+        fwhm = 1.7328
+    elif wl == "M":
+        fwhm = 2.3963
+    elif wl == "L":
+        fwhm = 3.5270
+    else:
+        print "ERROR!! not a know image"
+        fwhm = -1000
+    return fwhm
 
 def filter(wavelength_range):                                                   
-    #wavelength_range = sys.argv[1]                                             
     #print wavelength_range                                                     
     above, fits_data = get_data(wavelength_range)                       
     image = above * fits_data                                                   
@@ -27,12 +52,12 @@ def filter(wavelength_range):
     # Make the Mexican hat kernel and convolve                                  
     # The values given to the kernels should be 1.7328, 2.3963, 3.5270          
     # for S, M and L.                                                           
-    mex = MexicanHat2DKernel(1.7328)                                            
+    mex = MexicanHat2DKernel(get_pixFWHM(wavelength_range)) 
     mex_convol = convolve(image, mex, boundary = 'extend')                      
     m_mex = ma.masked_array(mex_convol, ~m_array.mask)                          
                                                                                 
     # Make the gaussian kernel and convolve                                     
-    gauss = Gaussian2DKernel(stddev=1.7328)                                     
+    gauss = Gaussian2DKernel(stddev=get_pixFWHM(wavelength_range)) 
     gauss_convol = convolve(image, gauss, boundary='extend')                    
     m_gauss= ma.masked_array(gauss_convol, ~m_array.mask)                       
     #c_gauss = np.multiply(z, m_array.mask)                                     
