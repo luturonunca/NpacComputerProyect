@@ -10,19 +10,63 @@ import numpy.ma as ma
 import matplotlib.pyplot as plt                                                 
 from astropy.io import fits
 from astropy.wcs import WCS                                                     
+from astropy.convolution import Gaussian2DKernel, MexicanHat2DKernel, convolve
 import os
 from scipy.optimize import curve_fit
 
 
-def transform(x, y):
-  
-    with fits.open('specific.fits') as fits_data:
-        # get header
-        header = fits_data[0].header
-        wcs = library.WCS(header)
-        ra_x , dec_y = wcs.convert_to_radec(x, y)
-        ra, dec = '%.3f' % ra_x, '%.3f' % dec_y
-    return ra, dec
+def filter(wavelength_range):                                                   
+    #wavelength_range = sys.argv[1]                                             
+    #print wavelength_range                                                     
+    above, fits_data = get_data(wavelength_range)                       
+    image = above * fits_data                                                   
+                                                                                
+    # Create mask without NaN                                                   
+    m_array = create_marray(fits_data)                                  
+                                                                                
+    # Make the Mexican hat kernel and convolve                                  
+    # The values given to the kernels should be 1.7328, 2.3963, 3.5270          
+    # for S, M and L.                                                           
+    mex = MexicanHat2DKernel(1.7328)                                            
+    mex_convol = convolve(image, mex, boundary = 'extend')                      
+    m_mex = ma.masked_array(mex_convol, ~m_array.mask)                          
+                                                                                
+    # Make the gaussian kernel and convolve                                     
+    gauss = Gaussian2DKernel(stddev=1.7328)                                     
+    gauss_convol = convolve(image, gauss, boundary='extend')                    
+    m_gauss= ma.masked_array(gauss_convol, ~m_array.mask)                       
+    #c_gauss = np.multiply(z, m_array.mask)                                     
+                                                                                
+#    ### Uncomment the next few lines to produce plots for the filtered mexican 
+#    ### hat, gaussian and raw data. 151,173s/^/#/g                             
+#                                                                               
+#                                                                               
+#    # Plot the figures; the min and the max values are reset in some of them   
+#    # for visualization purposes.                                              
+#    pixels = None                                                              
+#    fig, main_axes = plt.subplots(1,3, sharex=True, sharey=True, figsize=(15,5))
+#    #main_axes[0][0].imshow(mex, origin="lower", interpolation="None")         
+#    #main_axes[0][0].set_title("MexHat kernel")                                
+#                                                                               
+#    main_axes[0].imshow(m_mex,\                                                
+#                           origin="lower", interpolation="None")               
+#    main_axes[0].set_title("Convolution with MexHat")                          
+#                                                                               
+#    main_axes[1].imshow(m_gauss, origin="lower", interpolation="None")         
+#    main_axes[1].set_title("Convolution with gaussian")                        
+#                                                                               
+#                                                                               
+#    main_axes[2].imshow(image, origin="lower", interpolation="None")           
+#    main_axes[2].set_title("Data")                                             
+#                                                                               
+#    plt.show()                                                                 
+                                                                                
+#    ### Uncomment the next few lines to produce and print statistical values   
+#    mean_data = (np.nanmax(fits_data) - np.nanmin(fits_data))/2                
+#    print "Mean", mean_data, "\nMax", np.nanmax(fits_data),\                   
+#          "\nMin", np.nanmin(fits_data)
+    return m_mex
+
 
 def gaussian_fit(w, max_value, mean_value, sigma):
     """
@@ -32,23 +76,110 @@ def gaussian_fit(w, max_value, mean_value, sigma):
     z = max_value*np.exp(-((w-mean_value)**2)/(2*(sigma**2)))
     return z
 
+def get_gauss_sigma(data):                                                      
+    """                                                                         
+    Modified function from library. Does the same but returns more              
+    data from fit                                                               
+    """                                                                         
+    bin_values, bin_boundaries = np.histogram(data, 200)                        
+    my = np.float(np.max(np.nonzero(bin_values)))                               
+    mx = np.float(np.max(bin_boundaries))                                       
+    normal_y = bin_values/my                                                    
+    normal_x = bin_boundaries[:-1]/mx                                           
+    x = normal_x * mx                                                           
+    y = normal_y * my                                                           
+    fit, covariant = curve_fit(gaussian_fit, normal_x, normal_y)        
+    maxvalue = fit[0] * my                                                      
+    background = fit[1] * mx                                                    
+    dispersion = fit[2] * mx                                                    
+    return abs(dispersion), background
 
-def get_gauss_sigma(data):
-    """
-    returns the sigma of a gaussian fit over the fluxs
-    """
-    bin_values, bin_boundaries = np.histogram(data, 200)
-    my = np.float(np.max(np.nonzero(bin_values)))
-    mx = np.float(np.max(bin_boundaries))
-    normal_y = bin_values/my
-    normal_x = bin_boundaries[:-1]/mx
-    x = normal_x * mx
-    y = normal_y * my
-    fit, covariant = curve_fit(gaussian_fit, normal_x, normal_y)
-    maxvalue = fit[0] * my
-    background = fit[1] * mx
-    dispersion = fit[2] * mx
-    return abs(dispersion)
+def check_n_move(coords, data, suma, lumi):                                     
+    """                                                                         
+    check neighbours                                                            
+    """                                                                         
+    x = coords[0]                                                               
+    y = coords[1]                                                               
+    # check right                                                               
+    if data[y][x+1] > 0 and x < (len(data[y])-1):                               
+        # print "moved right"                                                   
+        suma += 1                                                               
+        lumi += data[y][x+1]                                                    
+        data[y][x+1] = 0                                                        
+        x += 1                                                                  
+    # check top                                                                 
+    elif  y < (len(data)-1) and data[y+1][x] > 0:                               
+        # print "moved down"                                                    
+        suma += 1                                                               
+        lumi += data[y+1][x]                                                    
+        data[y+1][x] = 0                                                        
+        y += 1                                                                  
+    # check left                                                                
+    elif data[y][x-1] > 0 and x != 0:                                           
+        # print "moved left"                                                    
+        suma += 1                                                               
+        lumi += data[y][x-1]                                                    
+        data[y][x-1] = 0                                                        
+        x = x-1                                                                 
+    # check down                                                                
+    elif data[y-1][x] > 0 and x != 0:                                           
+        # print "moved up"                                                      
+        suma += 1                                                               
+        lumi += data[y-1][x]                                                    
+        data[y-1][x] = 0                                                        
+        y = y-1                                                                 
+    else:                                                                       
+        # print "stayed                                                         
+        x = coords[0]                                                           
+        y = coords[1]                                                           
+    return x, y, data, suma, lumi
+
+def cluster_scan(initial, dat):                                                 
+    """                                                                         
+     scan cluster until  finish                                                 
+    """                                                                         
+    # Extremes of the cluster [x_min, x_max, y_min(fixed), y_max]
+    extremos = [initial[0], initial[0], initial[1], initial[1]]                 
+    dat[initial[1]][initial[0]] = False                                         
+    camino = [initial]                                                          
+    current1 = initial                                                          
+    suma = 1                                                                    
+    lumi = 0                                                                    
+    complete = False                                                            
+    while complete is False:                                                    
+        x, y, dat, suma, lumi = check_n_move(current1, dat, suma, lumi)         
+        if x > extremos[1]:                                                     
+            extremos[1] = x                                                     
+        elif x < extremos[0]:                                                   
+            extremos[0] = x                                                     
+        elif y > extremos[3]:                                                   
+            extremos[3] = y                                                     
+                                                                                
+        if [x, y] == camino[-1]:                                                
+            if suma == 1:                                                       
+                # -flag- print "unborn"                                         
+                complete = True                                                 
+            elif len(camino) > 1:                                               
+                # -flag- print "sigue, camino:", len(camino)                    
+                [x, y] = camino[-2]                                             
+                del camino[-1]                                                  
+                # -flag- print "sigue, camino:", len(camino)                    
+                                                                                
+            elif len(camino) == 1:                                              
+                # -flag- print "finish"                                         
+                complete = True                                                 
+        else:                                                                   
+            # -flag- print "appending "                                         
+            camino.append([x, y])                                               
+        current1 = [x, y]                                                       
+        #if suma==100:                                                          
+        #    complete = True                                                    
+    return dat, suma, extremos, lumi
+
+def centroides(arreglo):                                                        
+    x_centroid = ((arreglo[1] - arreglo[0])/2.+ arreglo[0])                     
+    y_centroid = ((arreglo[3] - arreglo[2])/2. + arreglo[2])                    
+    return x_centroid, y_centroid
 
 
 def create_marray(image):
