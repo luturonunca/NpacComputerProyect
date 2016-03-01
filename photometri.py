@@ -22,6 +22,46 @@ def get_filename(w):
     +w+"W.fits"
     return path+filename
 
+def get_FWHM(wl):
+    if wl == "S":
+        fwhm = 17.6
+    elif wl == "M":
+        fwhm = 23.9
+    elif wl == "L":
+        fwhm = 35.2
+    else:
+        print "ERROR!! not a know image"
+        fwhm = -1000
+    return fwhm
+
+def get_pixFWHM(wl):
+    if wl == "S":
+        fwhm = 1.7328
+    elif wl == "M":
+        fwhm = 2.3963
+    elif wl == "L":
+        fwhm = 3.5270
+    else:
+        print "ERROR!! not a know image"
+        fwhm = -1000
+    return fwhm
+
+def peakvsback(centroid,wl,header):
+    wcs = WCS(header)
+    fwhm = get_pixFWHM(wl)
+    
+    r_ap = 2.5 * fwhm 
+    r_int = 3.5 * fwhm
+    r_ext = 4.5 * fwhm
+    # set iteration limits
+    x_l = centroid[0] - r_ext
+    x_r = centroid[0] + r_ext
+    y_u = centroid[1] + r_ext
+    y_b = centroid[1] - r_ext
+    for j in range(x_l , x
+    return
+
+
 def main():
     fig = plt.figure()
 
