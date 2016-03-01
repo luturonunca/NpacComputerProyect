@@ -35,6 +35,9 @@ def get_FWHM(wl):
     return fwhm
 
 def get_pixFWHM(wl):
+    """
+    gets Full Width Maximun for the diferent images
+    """
     if wl == "S":
         fwhm = 1.7328
     elif wl == "M":
@@ -46,20 +49,38 @@ def get_pixFWHM(wl):
         fwhm = -1000
     return fwhm
 
-def peakvsback(centroid,wl,header):
+def peakvsback(data,centroid,wl,header):
+    """
+    makes de integral of the galaxy centered at 
+    centroid
+    """   
     wcs = WCS(header)
     fwhm = get_pixFWHM(wl)
-    
+    cent_pix = wcs.wcs_world2pix(centroid[0], centroid[1],0) 
     r_ap = 2.5 * fwhm 
     r_int = 3.5 * fwhm
-    r_ext = 4.5 * fwhm
+    r_ext = 5.5 * fwhm
     # set iteration limits
-    x_l = centroid[0] - r_ext
-    x_r = centroid[0] + r_ext
-    y_u = centroid[1] + r_ext
-    y_b = centroid[1] - r_ext
-    for j in range(x_l , x
-    return
+    # x_l = left; x_r = right
+    # y_u = up; y_b = bottom
+    x_l = int(cent_pix[0] - r_ext)
+    x_r = int(cent_pix[0] + r_ext)
+    y_u = int(cent_pix[1] + r_ext)
+    y_b = int(cent_pix[1] - r_ext)
+    integral = 0
+    background = 0
+    npix = 0
+    for j in range(y_b, y_u):
+        for i in range(x_l, x_r):
+            x_local = i - cent_pix[0]
+            y_local = j - cent_pix[1] 
+            r = np.sqrt((x_local**2)+(y_local**2))
+            if r <= r_ap:
+                integral +=  data[j][i]
+            elif r >= r_int and r <= r_ext:
+                npix += 1.
+                background += data[j][i]  
+    return integral, (background/npix)
 
 
 def main():
@@ -70,6 +91,10 @@ def main():
     above_L, fits_data_L = library.get_data("L")
     image_L = above_L * fits_data_L
     _ , header_L = fits.getdata(get_filename("L"),header=True)
+    cento = [289.3972219, -33.60861111]
+    coco = peakvsback(image_L, cento, "L" , header_L)
+    print " coco ", coco
+
 
     # Ploting section
     wcs_proj_L = WCS(header_L)
