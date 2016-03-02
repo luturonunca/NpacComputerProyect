@@ -15,6 +15,9 @@ import os
 from scipy.optimize import curve_fit
 
 def get_FWHM(wl):
+    """
+    Gets Full Width Maximun for the diferent images in arcseconds
+    """
     if wl == "S":
         fwhm = 17.6
     elif wl == "M":
@@ -28,7 +31,7 @@ def get_FWHM(wl):
 
 def get_pixFWHM(wl):
     """
-    gets Full Width Maximun for the diferent images
+    Gets Full Width Maximun for the diferent images in pixels
     """
     if wl == "S":
         fwhm = 1.7328
