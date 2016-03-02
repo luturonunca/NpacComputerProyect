@@ -97,7 +97,7 @@ def main():
     image_L = above_L * fits_data_L
     _ , header_L = fits.getdata(get_filename("L"),header=True)
     cento = [289.3972219, -33.60861111]
-    coco = photometry(image_L, cento, "L" , header_L)
+    coco = library.photometry(image_L, cento, "L" , header_L)
     print " coco ", coco
 
 
