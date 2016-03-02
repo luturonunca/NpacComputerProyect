@@ -129,7 +129,7 @@ def check_n_move(coords, data, suma, lumi):
     x = coords[0]                                                               
     y = coords[1]                                                               
     # check right                                                               
-    if data[y][x+1] > 0 and x < (len(data[y])-1):                               
+    if x < (len(data[y])-1) and data[y][x+1] > 0:                               
         # print "moved right"                                                   
         suma += 1                                                               
         lumi += data[y][x+1]                                                    
