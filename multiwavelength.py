@@ -26,6 +26,10 @@ def main():
     fig = plt.figure()
 
 
+
+
+     
+
     ### LARGE WAVELENGH
     above_L, fits_data_L = library.get_data("L")
     image_L = above_L * fits_data_L
@@ -60,12 +64,11 @@ def main():
     # check limits 289.345018791 -33.6099453587
     # Ploting section
     wcs_proj = WCS(header_S)
-    ax_wcs = fig.add_subplot(1,3,1, projection = wcs_proj)
+    ax_wcs = fig.add_subplot(1,3,1, projection = wcs_proj) #### OJO!!
     # defines coordinates of limits
-    print "world ", world[0], world[1]
+    # -flag- print "world ", world[0], world[1]
     pix = wcs_proj.wcs_world2pix(world[0],world[1], 0)
-    pix0 = wcs_proj.wcs_world2pix(zero[0],zero[1], 0)
-    
+    pix0 = wcs_proj.wcs_world2pix(zero[0],zero[1], 0)  
     #print "pix ", pix[0], pix[1] 
     ax_wcs.set_xlim(pix0[0], pix[0])
     ax_wcs.set_ylim(pix0[1], pix[1])
@@ -93,7 +96,7 @@ def main():
     ax_wcs_M.coords['ra'].set_ticks(color='red')
     ax_wcs_M.coords['dec'].set_ticks(color='red')
     pix = wcs_proj_M.wcs_world2pix(world[0],world[1], 0)
-    print "pix ", pix[0], pix[1] 
+    # -flag- print "pix ", pix[0], pix[1] 
     
     plt.show()
 
