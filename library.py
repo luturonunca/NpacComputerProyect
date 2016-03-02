@@ -274,4 +274,45 @@ def transform(array,W):
     array2 = w.wcs_pix2world(array,0)
     return array2
 
+def photometry(data,centroid,wl,header):
+    """
+    recieves centroid in ra dec
+    makes de integral of the galaxy centered at 
+    centroid
+    """
+    wcs = WCS(header)
+    fwhm = get_pixFWHM(wl)
+    cent_pix = wcs.wcs_world2pix(centroid[0], centroid[1],0)
+    r_ap = 2.5 * fwhm
+    r_int = 3.5 * fwhm
+    r_ext = 4.5 * fwhm
+    # set iteration limits
+    # x_l -> leftend; x_r -> rightend
+    # y_u -> upend; y_b -> bottomend
+    x_l = int(cent_pix[0] - r_ext)
+    x_r = int(cent_pix[0] + r_ext)
+    y_u = int(cent_pix[1] + r_ext)
+    y_b = int(cent_pix[1] - r_ext)
+    integral = 0
+    background = 0
+    size_ring = 0
+    size_bump = 0
+    for j in range(y_b, y_u):
+        for i in range(x_l, x_r):
+            x_local = i - cent_pix[0]
+            y_local = j - cent_pix[1]
+            r = np.sqrt((x_local**2)+(y_local**2))
+            if r <= r_ap:
+                size_bump += 1
+                integral +=   data[j][i]
+            elif r >= r_int and r <= r_ext:
+                size_ring += 1.
+                background += data[j][i]
+    norm_bg = background / size_ring
+    reduced_sig = integral - (size_bump * norm_bg)
+    return  [integral, reduced_sig], [background , norm_bg]
+
+
+
+
 
