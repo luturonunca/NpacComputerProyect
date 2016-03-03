@@ -22,6 +22,33 @@ def get_filename(w):
     +w+"W.fits"
     return path+filename
 
+def nearby_galaxies(coords_input, coords_detected, wl):
+    """
+    A function that returns the number of input galaxies that are nearby to
+    coord_detected.
+    """
+    nearby = []
+    r_ap = 2.5 * get_pixFWHM(wl)
+    for coord_in in (coords_input):
+        for coord_de in (coords_detected):
+            if abs(coord_de[0] - coord_in[0]) > r_ap\
+                                    or abs(coord_de[1] - coord_in[1]) > r_ap:
+                continue
+            else:
+                nearby.append(True)
+    return nearby
+
+#def nearby(coords_input, coords_detected, wl):
+#    nearby = False
+#    r_ap = 2.5 * library.get_pixFWHM(wl)
+#    for coord_de in (coords_detected):
+#        if abs(coord_de[0] - coords_input[0]) > r_ap\
+#                                or abs(coord_de[1] - coords_input[1]) > r_ap:
+#            continue
+#        else:
+#            nearby = True
+#    return nearby
+
 def main():
     fig = plt.figure()
 
@@ -56,12 +83,21 @@ def main():
     ## Arrays to plot photometric accuracy
     photo_accuracy = []
     flux_clean = []
+    ## Initialize array for completeness plot it'll contain pairs of
+    ## jansky, ratio.
+    ratio = []
+    flux_array = []
 
-    while galaxy_counter < 900:
+    while galaxy_counter < 9:
         counter = 0
         #################  Creates base arrays #######################      
         noise_base = np.copy(image_S)                                       
         base = np.zeros((len(image_S[0]),len(image_S))) 
+        
+        ## Local array of fluxes for the nine simulated galaxies below
+        local_fluxes = []
+        local_coords = []
+        
         while counter < 9:
             counter += 1
             galaxy_counter += 1
@@ -72,6 +108,11 @@ def main():
                            Gaussian2DKernel(2).array
             coords_gal = np.random.randint(20,len(image_S[0])-20, size=2)
             coord_array.append(coords_gal) 
+            local_coords.append(coords_gal) 
+            # To plot completeness, we need flux value of sim galaxy
+            local_fluxes.append(np.amax(gauss_kernel))
+            flux_array.append(np.amax(gauss_kernel))
+            
             for j in range(0, len(gauss_kernel)):
                 for i in range(0, len(gauss_kernel[0])):
                     noise_base[coords_gal[1]+j-8][coords_gal[0]+i-8] += \
@@ -83,41 +124,6 @@ def main():
             ################## integrates both w noise n w'out ############
             integ_clean = library.photometrySimple(base,coords_gal,"S")
             integ_noise = library.photometrySimple(noise_base,coords_gal,"S")
-            ## Photometric accuracy part
-            photo_accuracy.append((integ_clean[2] - integ_noise[2]) / integ_clean[2])
-            flux_clean.append(integ_clean[2])
-            ## Completeness part
-            filt_n = library.filter_direct("S", noise_base)
-            
-			## Version of locator for completeness
-            n_sig = 2
-            sigma_n, mean_n = library.get_gauss_sigma(filt_n)
-            mask = np.zeros((len(filt_n[0]), len(filt_n)))
-            mask[filt_n >= n_sig * sigma_n + mean_n] =\
-                     filt_n[filt_n >= n_sig * sigma_n + mean_n]
-
-            suma_array = []
-            centroides_array = []
-            lumi_array = []                                                         
-            #print "Length mask_plot ", len(mask),\
-            #      "and mask_plot[1]", len(mask[1])                             
-                                                                                
-            for j in range(0, len(mask)):                                      
-                for i in range(0, len(mask[1])):                               
-                    if mask[j][i] == 0:                                        
-                        continue                                                    
-                    else:                                                           
-                        mask, suma, ext, lumi = library.cluster_scan([i,j], mask) 
-                        if suma < 5:                                                
-                            continue                                                
-                        else:                                                       
-                            suma_array.append(suma)                                 
-                            centroides_array.append(library.centroides(ext))       
-                            lumi_array.append(lumi)
-
-
-
-
 
             if math.isnan(integ_noise[1]) is False:
                 noise_me += integ_noise[1]
@@ -125,10 +131,50 @@ def main():
                 diff += abs(integ_noise[1] - integ_clean[1])
             else:
                 num_nans += 1
+            
+            ## Photometric accuracy part
+            photo_accuracy.append((integ_clean[2] - integ_noise[2]) / integ_clean[2])
+            flux_clean.append(integ_clean[2])
+        
+        
+        ## Completeness part
+        filt_n = library.filter_direct("S", noise_base)
+        
+		## Version of locator for completeness
+        n_sig = 2
+        sigma_n, mean_n = library.get_gauss_sigma(filt_n)
+        mask = np.zeros((len(filt_n[0]), len(filt_n)))
+        mask[filt_n >= n_sig * sigma_n + mean_n] =\
+                 filt_n[filt_n >= n_sig * sigma_n + mean_n]
+
+        suma_array = []
+        centroides_array = []
+        lumi_array = []                                                         
+        #print "Length mask_plot ", len(mask),\
+        #      "and mask_plot[1]", len(mask[1])                             
+                                                                            
+        for l in range(0, len(mask)):                                      
+            for k in range(0, len(mask[1])):                               
+                if mask[l][k] == 0:                                        
+                    continue                                                    
+                else:                                                           
+                    mask, suma, ext, lumi = library.cluster_scan([k,l], mask) 
+                    if suma < 5:                                                
+                        continue                                                
+                    else:                                                       
+                        suma_array.append(suma)                                 
+                        centroides_array.append(library.centroides(ext))       
+                        lumi_array.append(lumi)
+        
+        
+        matched = nearby_galaxies(local_coords, centroides_array, "S")
+        print matched
+
+
     
 
-    print "\n## CENTROIDS ##\n Centroids and lumi :", centroides_array,\
-           lumi_array, "Length of centroids: ", len(centroides_array)
+#    print "\n## CENTROIDS ##\n Centroids and lumi :", centroides_array,\
+#           lumi_array, "Length of centroids: ", len(centroides_array)
     #print filtered_noise
     #print base_noise
     
