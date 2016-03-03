@@ -22,21 +22,53 @@ def get_filename(w):
     +w+"W.fits"
     return path+filename
 
-def nearby_galaxies(coords_input, coords_detected, wl):
+def nearby_galaxies(fluxes, coords_input, coords_detected, wl):
     """
     A function that returns the number of input galaxies that are nearby to
     coord_detected.
     """
-    nearby = []
-    r_ap = 2.5 * get_pixFWHM(wl)
+
     for coord_in in (coords_input):
         for coord_de in (coords_detected):
-            if abs(coord_de[0] - coord_in[0]) > r_ap\
-                                    or abs(coord_de[1] - coord_in[1]) > r_ap:
-                continue
-            else:
-                nearby.append(True)
-    return nearby
+            
+
+
+
+
+
+
+#    nearby = []
+#    n_nearby = []
+#    nearby_coords = []
+#    n_nearby_coords = []
+#    r_ap = 2.5 * library.get_pixFWHM(wl)
+#
+#    for coord_in in (coords_input):
+#        for coord_de in (coords_detected):
+#            if abs(coord_de[0] - coord_in[0]) > r_ap\
+#                                    or abs(coord_de[1] - coord_in[1]) > r_ap:
+#                continue
+#            else:
+#                nearby.append(True)
+#                nearby_coords.append(coord_in)
+#    
+#    for i in range(len(coords_input)):
+#        for j in range(len(nearby_coords)):
+#            if j == i:
+#                continue
+#            else:
+#                n_nearby.append
+#
+#
+#    if len(nearby) == len(n_nearby):
+#        return nearby, nearby_coords
+#    else:
+#        #Merge arrays JOTA
+#        for k in range(len(n_nearby))
+#            #kkkkkkkk
+#
+#
+#    return nearby, coords_input
 
 #def nearby(coords_input, coords_detected, wl):
 #    nearby = False
@@ -87,8 +119,9 @@ def main():
     ## jansky, ratio.
     ratio = []
     flux_array = []
+    matching_array = []
 
-    while galaxy_counter < 9:
+    while galaxy_counter < 1:
         counter = 0
         #################  Creates base arrays #######################      
         noise_base = np.copy(image_S)                                       
@@ -167,10 +200,14 @@ def main():
                         lumi_array.append(lumi)
         
         
-        matched = nearby_galaxies(local_coords, centroides_array, "S")
-        print matched
+        matched, unmatched = nearby_galaxies(local_fluxes, local_coords, centroides_array, "S")
+        print "List unmatched ", unmatched
+        # little loop to append coherently in big array
+        for m in range(0, len(matched)):
+            matching_array.append(matched[m])
+        print "Flux and matching: ", flux_array, matching_array
 
-
+    print "Lengths of flux and matching: ", len(flux_array), len(matching_array)
     
 
 #    print "\n## CENTROIDS ##\n Centroids and lumi :", centroides_array,\
