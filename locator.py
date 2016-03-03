@@ -9,15 +9,18 @@ import os
 from library import *
 
 plt.ion()
-
+path = "/home/abeelen/Herschel/DDT_mustdo_5/PLCK_SZ_G004.5-19.6-1/"         
+filenameS= "OD1271_0x50012da8L_SpirePhotoLargeScan_PLCK_SZ_G004.5-19.6-1_destriped_PSW.fits" 
+filenameM= "OD1271_0x50012da8L_SpirePhotoLargeScan_PLCK_SZ_G004.5-19.6-1_destriped_PMW.fits"
+filenameL= "OD1271_0x50012da8L_SpirePhotoLargeScan_PLCK_SZ_G004.5-19.6-1_destriped_PLW.fits"
 def main():
 
-    mex_S = filter("S")
-    mex_M = filter("M")
-    mex_L = filter("L")
+    mex_S = filter("S", path+filenameS)
+    mex_M = filter("M", path+filenameM)
+    mex_L = filter("L", path+filenameL)
     
     # Number of sigmas to be taken for the threshold
-    n_sig = 3
+    n_sig = 2
     sigma_S, mean_S = get_gauss_sigma(mex_S)
     sigma_M, mean_M = get_gauss_sigma(mex_M)
     sigma_L, mean_L = get_gauss_sigma(mex_L)

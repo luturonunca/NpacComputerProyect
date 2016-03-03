@@ -358,7 +358,6 @@ def get_data_path(W,filepath):
       ycenter = int(len(fits_data_uncut)/2)                                       
       xcenter = int(len(fits_data_uncut[0])/2)                                    
       cut = int(ycenter/2)                                                        
-      print "centers ", float(xcenter)/ycenter                                    
       # Cut array to focus on center                                              
       fits_data = fits_data_uncut[xcenter-cut:xcenter+cut,ycenter-cut:ycenter+cut]
       fits_coverage = fits_coverage_uncut[xcenter-cut:xcenter+cut,ycenter-cut:ycenter+cut    ]
@@ -368,8 +367,8 @@ def get_data_path(W,filepath):
       # Create masked array from fits_data maskin with coverage                   
       mask_coverage = m_array.mask * fits_coverage                                
       above = fits_coverage > 8                                                   
-                                                                                  
-      image = (above * fits_data)                                                 
+      ## build this outside 
+      # image = (above * fits_data)                                                 
                                                                                   
       return above, fits_data 
 

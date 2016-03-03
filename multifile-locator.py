@@ -67,19 +67,45 @@ def get_positions(fileinfo):
         
     d_gal = {"centroids": centroides_array, "n_pix": suma_array,\
                       "luminosity_first": lumi_array}
-    print d_gal["centroids"]
     return d_gal
 
-def main():                                                                     
+def main():
+    ########## define directory where files are ####################
     path = "/home/abeelen/Herschel/DDT_mustdo_5/"                               
-    files_array = file_traveler(path)
+    files_array = file_traveler(path) #give [full-path-to-file,filename]
+    flux_array_S = []
+    flux_array_M = []
+    flux_array_L = []
+    x_array = []
+    cont = 0
+    final_S = [0,0,0,0,0,0]
+    final_M = [0,0,0,0,0,0]
+    final_L = [0,0,0,0,0,0]
     for i in range(len(files_array)):
-        print files_array[i][1][-7]
-        dicti = get_positions(files_array[i])
-        #print "dict['Name']: ", dicti['centroids']
-                 
+        waverange =  files_array[i][1][-7]
+        above, fits_data = get_data_path(waverange,files_array[i][0])
+        image = above * fits_data
+        dictionary = get_positions(files_array[i])
+        coordinates = dictionary['centroids']
 
-
+        for i in range(len(coordinates)):
+            flux = photometrySimple(image,coordinates[i],waverange)
+            if waverange == "S":
+                cont += 1
+                flux_array.append(flux[2])
+                x_array.append(cont) 
+                if flux[2] > 0.02 and flux[2] < 0.029:
+                    final[0]+=1
+                if flux[2] > 0.029 and flux[2] < 0.051:
+                    final[1]+=1
+                if flux[2] > 0.051 and flux[2] < 0.69:                           
+                    final[2]+=1                                                 
+                if flux[2] > 0.69 and flux[2] < 0.111:                           
+                    final[3]+=1
+                if flux[2] > 0.111 and flux[2] < 0.289:                          
+                    final[4]+=1                                                
+                if flux[2] > 0.289 and flux[2] < 0.511:                          
+                    final[5]+=1
 
     return 0
 
