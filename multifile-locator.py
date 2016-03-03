@@ -24,7 +24,7 @@ def file_traveler(path):
 
 
 
-def main22(fileinfo):
+def get_positions(fileinfo):
     mex = filter(fileinfo[1][-7],fileinfo[0])
     
     # Number of sigmas to be taken for the threshold
@@ -75,7 +75,7 @@ def main():
     files_array = file_traveler(path)
     for i in range(len(files_array)):
         print files_array[i][1][-7]
-        dicti = main22(files_array[i])
+        dicti = get_positions(files_array[i])
         #print "dict['Name']: ", dicti['centroids']
                  
 

@@ -315,6 +315,7 @@ def photometrySimple(data,centroid,wl):
     size_ring = 0
     size_bump = 0
     log_bag = 0
+    array_circle = []
     for j in range(y_b, y_u):
         for i in range(x_l, x_r):
             x_local = i - cent_pix[0]
@@ -327,6 +328,7 @@ def photometrySimple(data,centroid,wl):
             if j >=len(data) or j < 0:
                 continue
             if r <= r_ap:
+                array_circle.append(data[j][i])
                 size_bump += 1
                 integral +=   data[j][i]
             elif r >= r_int and r <= r_ext:
@@ -336,7 +338,8 @@ def photometrySimple(data,centroid,wl):
     norm_bg = background / size_ring
     log_ave = np.log10(log_bag / size_ring)
     reduced_sig = integral - (size_bump * norm_bg)
-    return  [integral, reduced_sig]
+    flux_J = np.amax(array_circle)
+    return  [integral, reduced_sig,flux_J]
 
 
 def get_data_path(W,filepath):                                                                
