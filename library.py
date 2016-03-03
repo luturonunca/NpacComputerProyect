@@ -44,9 +44,9 @@ def get_pixFWHM(wl):
         fwhm = -1000
     return fwhm
 
-def filter(wavelength_range):                                                   
+def filter(wavelength_range,filepath):                                                   
     #print wavelength_range                                                     
-    above, fits_data = get_data(wavelength_range)                       
+    above, fits_data = get_data_path(wavelength_range,filepath)                       
     image = above * fits_data                                                   
                                                                                 
     # Create mask without NaN                                                   
@@ -64,35 +64,6 @@ def filter(wavelength_range):
     gauss_convol = convolve(image, gauss, boundary='extend')                    
     m_gauss= ma.masked_array(gauss_convol, ~m_array.mask)                       
     #c_gauss = np.multiply(z, m_array.mask)                                     
-                                                                                
-#    ### Uncomment the next few lines to produce plots for the filtered mexican 
-#    ### hat, gaussian and raw data. 151,173s/^/#/g                             
-#                                                                               
-#                                                                               
-#    # Plot the figures; the min and the max values are reset in some of them   
-#    # for visualization purposes.                                              
-#    pixels = None                                                              
-#    fig, main_axes = plt.subplots(1,3, sharex=True, sharey=True, figsize=(15,5))
-#    #main_axes[0][0].imshow(mex, origin="lower", interpolation="None")         
-#    #main_axes[0][0].set_title("MexHat kernel")                                
-#                                                                               
-#    main_axes[0].imshow(m_mex,\                                                
-#                           origin="lower", interpolation="None")               
-#    main_axes[0].set_title("Convolution with MexHat")                          
-#                                                                               
-#    main_axes[1].imshow(m_gauss, origin="lower", interpolation="None")         
-#    main_axes[1].set_title("Convolution with gaussian")                        
-#                                                                               
-#                                                                               
-#    main_axes[2].imshow(image, origin="lower", interpolation="None")           
-#    main_axes[2].set_title("Data")                                             
-#                                                                               
-#    plt.show()                                                                 
-                                                                                
-#    ### Uncomment the next few lines to produce and print statistical values   
-#    mean_data = (np.nanmax(fits_data) - np.nanmin(fits_data))/2                
-#    print "Mean", mean_data, "\nMax", np.nanmax(fits_data),\                   
-#          "\nMin", np.nanmin(fits_data)
     return m_mex
 
 
@@ -116,7 +87,7 @@ def get_gauss_sigma(data):
     normal_x = bin_boundaries[:-1]/mx                                           
     x = normal_x * mx                                                           
     y = normal_y * my                                                           
-    fit, covariant = curve_fit(gaussian_fit, normal_x, normal_y)        
+    fit, covariant = curve_fit(gaussian_fit, normal_x, normal_y, maxfev=2000)        
     maxvalue = fit[0] * my                                                      
     background = fit[1] * mx                                                    
     dispersion = fit[2] * mx                                                    
@@ -368,6 +339,35 @@ def photometrySimple(data,centroid,wl):
     return  [integral, reduced_sig]
 
 
-
+def get_data_path(W,filepath):                                                                
+      """                                                                         
+      gets either S, M or L as string representing the dataset wavelengh          
+      returns: the cutted data, i.e centered, and a boolean matrix                
+      that represent a threathole in the coverage matrix.                         
+                                                                                 
+      """                                                                         
+                                                                                  
+      # Load the data                                                             
+      fits_data_uncut = fits.getdata(filepath,"image")                       
+                                                                                  
+      fits_coverage_uncut = fits.getdata(filepath,"coverage")                
+      # Define cuts                                                               
+      ycenter = int(len(fits_data_uncut)/2)                                       
+      xcenter = int(len(fits_data_uncut[0])/2)                                    
+      cut = int(ycenter/2)                                                        
+      print "centers ", float(xcenter)/ycenter                                    
+      # Cut array to focus on center                                              
+      fits_data = fits_data_uncut[xcenter-cut:xcenter+cut,ycenter-cut:ycenter+cut]
+      fits_coverage = fits_coverage_uncut[xcenter-cut:xcenter+cut,ycenter-cut:ycenter+cut    ]
+                                                                                  
+      # Create masked array from fits_data                                        
+      m_array = create_marray(fits_data)                                          
+      # Create masked array from fits_data maskin with coverage                   
+      mask_coverage = m_array.mask * fits_coverage                                
+      above = fits_coverage > 8                                                   
+                                                                                  
+      image = (above * fits_data)                                                 
+                                                                                  
+      return above, fits_data 
 
 

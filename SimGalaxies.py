@@ -46,32 +46,49 @@ def main():
     pix0 = wcs_proj.wcs_world2pix(zero[0],zero[1], 0)
     
     ## simulating galaxies
-    cont = 0
+    galaxy_counter = 0
     base = np.zeros((len(image_S[0]),len(image_S)))
-    while cont < 9:
-        cont += 1
-        gauss_kernel = np.random.uniform(1,3, size=1)[0] * Gaussian2DKernel(2).array
-        coords_gal = np.random.randint(20,len(image_S[0])-20, size=2)
- 
-        #coords_gal = int(len(image_S)/2) , int(len(image_S)/2)
-        for j in range(0, len(gauss_kernel)):
-            for i in range(0, len(gauss_kernel[0])):
-                image_S[coords_gal[1]+j-8][coords_gal[0]+i-8] += gauss_kernel[i][j]
-        for j in range(0, len(gauss_kernel)):
+    coord_array = []
+    noise_me = 0
+    clean_me = 0
+    num_nans = 0
+    diff = 0
+    while galaxy_counter < 900:
+        counter = 0
+        #################  Creates base arrays #######################      
+        noise_base = np.copy(image_S)                                       
+        base = np.zeros((len(image_S[0]),len(image_S))) 
+        while counter < 9:
+            counter += 1
+            galaxy_counter += 1
+            ################## Creates random Galaxies ####################
+            gauss_kernel = np.random.uniform(1,3, size=1)[0] *\
+                           Gaussian2DKernel(2).array
+            coords_gal = np.random.randint(20,len(image_S[0])-20, size=2)
+            coord_array.append(coords_gal) 
+            for j in range(0, len(gauss_kernel)):
                 for i in range(0, len(gauss_kernel[0])):
-                    base[coords_gal[1]+j-8][coords_gal[0]+i-8] += gauss_kernel[i][j]
-
-
-
-    integ_clean = library.photometrySimple(base,[51,51],"S")
-    coordss = [coords_gal[0]-8,coords_gal[1]-8]
-    integ_noise = library.photometrySimple(image_S,coords_gal,"S")
-    print "perfect integral = ", integ_clean[1], ",with noise = ", integ_noise[1]
-
+                    noise_base[coords_gal[1]+j-8][coords_gal[0]+i-8] += \
+                               gauss_kernel[i][j]
+            for j in range(0, len(gauss_kernel)):
+                for i in range(0, len(gauss_kernel[0])):
+                    base[coords_gal[1]+j-8][coords_gal[0]+i-8] += \
+                                            gauss_kernel[i][j]
+            ################## integrates both w noise n w'out ############
+            integ_clean = library.photometrySimple(base,coords_gal,"S")
+            integ_noise = library.photometrySimple(noise_base,coords_gal,"S")
+            if math.isnan(integ_noise[1]) is False:
+                noise_me += integ_noise[1]
+                clean_me += integ_clean[1]
+                diff += abs(integ_noise[1] - integ_clean[1])
+            else:
+                num_nans += 1
+    print "Clean integral = ", clean_me /900., ",with noise = ", noise_me/900.
+    print "Difference = ", diff/ 900.
     #print "pix ", pix[0], pix[1] 
     #ax_wcs.set_xlim(pix0[0], pix[0])
     #ax_wcs.set_ylim(pix0[1], pix[1])
-    ax_wcs.imshow(image_S, origin='lower', interpolation='None')
+    ax_wcs.imshow(noise_base, origin='lower', interpolation='None')
     ax_wcs1.imshow(base, origin='lower', interpolation='None')
     ax_wcs.coords['ra'].set_ticks(color='red')
     ax_wcs.coords['dec'].set_ticks(color='red')    
