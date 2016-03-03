@@ -88,8 +88,14 @@ def get_gauss_sigma(data):
     """                                                                         
     Modified function from library. Does the same but returns more              
     data from fit                                                               
-    """                                                                         
-    bin_values, bin_boundaries = np.histogram(data, 200)                        
+    """
+    data_center = []
+    cont = 0
+    if i in np.rave(data):
+        if i < 0.02:
+            data_ceter.append(i)
+        cont += 1
+    bin_values, bin_boundaries = np.histogram(data_center, 200)                        
     my = np.float(np.max(np.nonzero(bin_values)))                               
     mx = np.float(np.max(bin_boundaries))                                       
     normal_y = bin_values/my                                                    

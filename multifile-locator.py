@@ -104,17 +104,17 @@ def main():
                 cont += 1
                 if np.isnan(flux[2])== True:
                         continue
-                flux_array_S.append((flux[2]/size_S))
+                flux_array_S.append(flux[2])
             elif waverange == "M":
                 cont += 1                                                          
-                flux_array_M.append(flux[2]/size_M)
+                flux_array_M.append(flux[2])
 
             elif waverange == "L":                                                   
                 cont += 1                                                          
-                flux_array_L.append(flux[2]/size_L)
+                flux_array_L.append(flux[2])
     binboundaries = [0.001,0.002, 0.0029,0.0051,0.0069,0.0111,0.0289,0.04,0.5] 
 
-    plt.hist(flux_array_S, bins=100)
+    plt.hist(flux_array_S, bins=binboundaries)
     plt.show()
     print final_S, final_M, final_L
 
