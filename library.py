@@ -91,7 +91,7 @@ def get_gauss_sigma(data):
     """
     data_center = []
     cont = 0
-    if i in np.ravel(data):
+    for i in np.ravel(data):
         if i < 0.02:
             data_center.append(i)
         cont += 1
