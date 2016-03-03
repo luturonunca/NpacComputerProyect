@@ -53,6 +53,10 @@ def main():
     clean_me = 0
     num_nans = 0
     diff = 0
+    ## Arrays to plot photometric accuracy
+    photo_accuracy = []
+    flux_clean = []
+
     while galaxy_counter < 900:
         counter = 0
         #################  Creates base arrays #######################      
@@ -62,7 +66,8 @@ def main():
             counter += 1
             galaxy_counter += 1
             ################## Creates random Galaxies ####################
-            gauss_kernel = np.random.uniform(1,3, size=1)[0] *\
+            #gauss_kernel = 5 * Gaussian2DKernel(2).array
+            gauss_kernel = np.random.uniform(0.1,20, size=1)[0] *\
                            Gaussian2DKernel(2).array
             coords_gal = np.random.randint(20,len(image_S[0])-20, size=2)
             coord_array.append(coords_gal) 
@@ -77,12 +82,23 @@ def main():
             ################## integrates both w noise n w'out ############
             integ_clean = library.photometrySimple(base,coords_gal,"S")
             integ_noise = library.photometrySimple(noise_base,coords_gal,"S")
+            ## Photometric accuracy part
+            photo_accuracy.append((integ_clean[2] - integ_noise[2]) / integ_clean[2])
+            flux_clean.append(integ_clean[2])
+
+
+
             if math.isnan(integ_noise[1]) is False:
                 noise_me += integ_noise[1]
                 clean_me += integ_clean[1]
                 diff += abs(integ_noise[1] - integ_clean[1])
             else:
                 num_nans += 1
+    
+    
+    #print "\n\n##Photo accuracy##\n\n Accuracy: ", photo_accuracy,\
+    #      "Input flux: ", flux_clean
+    
     print "Clean integral = ", clean_me /900., ",with noise = ", noise_me/900.
     print "Difference = ", diff/ 900.
     #print "pix ", pix[0], pix[1] 
@@ -94,6 +110,19 @@ def main():
     ax_wcs.coords['dec'].set_ticks(color='red')    
     plt.show()
 
+    ## Photometric accuracy plots
+    # Latex details
+    #plt.rc('text', usetex=True)
+    #plt.rc('font', family='serif')
+    
+    fig2 = plt.figure()
+    ax = fig2.add_subplot(1,1,1)
+    ax.scatter(flux_clean, photo_accuracy)
+    ax.set_title('Photometric accuracy')
+    plt.show()
+    #plt.ylabel("$\frac{F_{input}-F_{measured}}{F_{input}}$")
+    plt.ylabel("Normalized difference of flux")
+    plt.xlabel("Flux")
     return 0
 
 if __name__ == '__main__':
