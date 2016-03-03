@@ -91,9 +91,9 @@ def get_gauss_sigma(data):
     """
     data_center = []
     cont = 0
-    if i in np.rave(data):
+    for i in np.ravel(data):
         if i < 0.02:
-            data_ceter.append(i)
+            data_center.append(i)
         cont += 1
     bin_values, bin_boundaries = np.histogram(data_center, 200)                        
     my = np.float(np.max(np.nonzero(bin_values)))                               
