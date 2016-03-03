@@ -44,7 +44,7 @@ def get_pixFWHM(wl):
         fwhm = -1000
     return fwhm
 
-def filter(wavelength_range,filepath):                                                   
+def filter(wavelength_range,filepath): 
     #print wavelength_range                                                     
     above, fits_data = get_data_path(wavelength_range,filepath)                       
     image = above * fits_data                                                   
@@ -66,6 +66,15 @@ def filter(wavelength_range,filepath):
     #c_gauss = np.multiply(z, m_array.mask)                                     
     return m_mex
 
+def filter_direct(wavelength_range, image): 
+                                                                                
+    # Make the Mexican hat kernel and convolve                                  
+    # The values given to the kernels should be 1.7328, 2.3963, 3.5270          
+    # for S, M and L.                                                           
+    mex = MexicanHat2DKernel(get_pixFWHM(wavelength_range)) 
+    mex_convol = convolve(image, mex, boundary = 'extend')                      
+                                                                                
+    return mex_convol
 
 def gaussian_fit(w, max_value, mean_value, sigma):
     """

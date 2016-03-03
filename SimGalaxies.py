@@ -26,7 +26,7 @@ def main():
     fig = plt.figure()
 
     
-    ### SHORT WAVELENGH
+    ### SHORT WAVELENGTH
     above_S, fits_data_S = library.get_data("S")
     image_S = above_S * fits_data_S
     _ , header_S = fits.getdata(get_filename("S"),header=True)
@@ -34,7 +34,7 @@ def main():
     m_array_S = library.create_marray(fits_data_S)
    
     # check limits 289.345018791 -33.6099453587
-    # Ploting section
+    # Plotting section
     wcs_proj = WCS(header_S)
     world = wcs_proj.wcs_pix2world(57.,57., 0)                                
     zero = wcs_proj.wcs_pix2world(0.,0., 0)
@@ -67,6 +67,7 @@ def main():
             galaxy_counter += 1
             ################## Creates random Galaxies ####################
             #gauss_kernel = 5 * Gaussian2DKernel(2).array
+            #witdth_rand = np.random.randint(1,3)
             gauss_kernel = np.random.uniform(0.1,20, size=1)[0] *\
                            Gaussian2DKernel(2).array
             coords_gal = np.random.randint(20,len(image_S[0])-20, size=2)
@@ -85,6 +86,36 @@ def main():
             ## Photometric accuracy part
             photo_accuracy.append((integ_clean[2] - integ_noise[2]) / integ_clean[2])
             flux_clean.append(integ_clean[2])
+            ## Completeness part
+            filt_n = library.filter_direct("S", noise_base)
+            
+			## Version of locator for completeness
+            n_sig = 2
+            sigma_n, mean_n = library.get_gauss_sigma(filt_n)
+            mask = np.zeros((len(filt_n[0]), len(filt_n)))
+            mask[filt_n >= n_sig * sigma_n + mean_n] =\
+                     filt_n[filt_n >= n_sig * sigma_n + mean_n]
+
+            suma_array = []
+            centroides_array = []
+            lumi_array = []                                                         
+            #print "Length mask_plot ", len(mask),\
+            #      "and mask_plot[1]", len(mask[1])                             
+                                                                                
+            for j in range(0, len(mask)):                                      
+                for i in range(0, len(mask[1])):                               
+                    if mask[j][i] == 0:                                        
+                        continue                                                    
+                    else:                                                           
+                        mask, suma, ext, lumi = library.cluster_scan([i,j], mask) 
+                        if suma < 5:                                                
+                            continue                                                
+                        else:                                                       
+                            suma_array.append(suma)                                 
+                            centroides_array.append(library.centroides(ext))       
+                            lumi_array.append(lumi)
+
+
 
 
 
@@ -95,6 +126,11 @@ def main():
             else:
                 num_nans += 1
     
+
+    print "\n## CENTROIDS ##\n Centroids and lumi :", centroides_array,\
+           lumi_array, "Length of centroids: ", len(centroides_array)
+    #print filtered_noise
+    #print base_noise
     
     #print "\n\n##Photo accuracy##\n\n Accuracy: ", photo_accuracy,\
     #      "Input flux: ", flux_clean
