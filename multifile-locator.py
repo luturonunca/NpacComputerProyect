@@ -21,7 +21,9 @@ def file_traveler(path):
         for files in cop:                                                           
             files_array.append([path+fn+"/"+files,files])
     return files_array
-
+def compute_size_field(x,y,angle):
+    size = x * y *(2*np.pi*(1-np.cos(np.radians(angle))))
+    return size
 
 
 def get_positions(fileinfo):
@@ -81,31 +83,40 @@ def main():
     final_S = [0,0,0,0,0,0]
     final_M = [0,0,0,0,0,0]
     final_L = [0,0,0,0,0,0]
-    for i in range(len(files_array)):
-        waverange =  files_array[i][1][-7]
-        above, fits_data = get_data_path(waverange,files_array[i][0])
+    for j in range(len(files_array)):
+        waverange =  files_array[j][1][-7]
+        above, fits_data, header = get_data_path(waverange,files_array[j][0], header=True)
         image = above * fits_data
-        dictionary = get_positions(files_array[i])
+        size_S = compute_size_field(len(image[0]),len(image),\
+                               abs(header['CDELT1']))
+        size_M = compute_size_field(len(image[0]),len(image),\
+                               abs(header['CDELT1']))
+        size_L = compute_size_field(len(image[0]),len(image),\
+                               abs(header['CDELT1']))
+        print len(image),len(image[0]), abs(header['CDELT1'])
+        dictionary = get_positions(files_array[j])
         coordinates = dictionary['centroids']
-
-        for i in range(len(coordinates)):
+        for i in range(0, len(coordinates)):
             flux = photometrySimple(image,coordinates[i],waverange)
+            if np.isnan(flux[2])== True:                                           
+                 continue  
             if waverange == "S":
                 cont += 1
-                flux_array.append(flux[2])
-                x_array.append(cont) 
-                if flux[2] > 0.02 and flux[2] < 0.029:
-                    final[0]+=1
-                if flux[2] > 0.029 and flux[2] < 0.051:
-                    final[1]+=1
-                if flux[2] > 0.051 and flux[2] < 0.69:                           
-                    final[2]+=1                                                 
-                if flux[2] > 0.69 and flux[2] < 0.111:                           
-                    final[3]+=1
-                if flux[2] > 0.111 and flux[2] < 0.289:                          
-                    final[4]+=1                                                
-                if flux[2] > 0.289 and flux[2] < 0.511:                          
-                    final[5]+=1
+                if np.isnan(flux[2])== True:
+                        continue
+                flux_array_S.append((flux[2]/size_S))
+            elif waverange == "M":
+                cont += 1                                                          
+                flux_array_M.append(flux[2]/size_M)
+
+            elif waverange == "L":                                                   
+                cont += 1                                                          
+                flux_array_L.append(flux[2]/size_L)
+    binboundaries = [0.001,0.002, 0.0029,0.0051,0.0069,0.0111,0.0289,0.04,0.5] 
+
+    plt.hist(flux_array_S, bins=100)
+    plt.show()
+    print final_S, final_M, final_L
 
     return 0
 

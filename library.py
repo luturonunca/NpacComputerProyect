@@ -338,11 +338,11 @@ def photometrySimple(data,centroid,wl):
     norm_bg = background / size_ring
     log_ave = np.log10(log_bag / size_ring)
     reduced_sig = integral - (size_bump * norm_bg)
-    flux_J = np.amax(array_circle)
+    flux_J = np.amax(array_circle)- norm_bg
     return  [integral, reduced_sig,flux_J]
 
 
-def get_data_path(W,filepath):                                                                
+def get_data_path(W,filepath, header = False):                                                                
       """                                                                         
       gets either S, M or L as string representing the dataset wavelengh          
       returns: the cutted data, i.e centered, and a boolean matrix                
@@ -351,7 +351,7 @@ def get_data_path(W,filepath):
       """                                                                         
                                                                                   
       # Load the data                                                             
-      fits_data_uncut = fits.getdata(filepath,"image")                       
+      fits_data_uncut, fits_header = fits.getdata(filepath,"image", header=True)                       
                                                                                   
       fits_coverage_uncut = fits.getdata(filepath,"coverage")                
       # Define cuts                                                               
@@ -369,7 +369,9 @@ def get_data_path(W,filepath):
       above = fits_coverage > 8                                                   
       ## build this outside 
       # image = (above * fits_data)                                                 
-                                                                                  
-      return above, fits_data 
+      if header == True:
+        return above, fits_data, fits_header
+      else:
+        return above, fits_data
 
 
