@@ -43,7 +43,7 @@ def main():
     fig = plt.figure()
 
     
-    wavelength = "S"
+    wavelength = "L"
     ### SHORT WAVELENGTH
     above_S, fits_data_S = library.get_data(wavelength)
     image_S = above_S * fits_data_S
@@ -80,7 +80,7 @@ def main():
     flux_t_array = []
     popo = 0
 
-    while galaxy_counter < 10000:
+    while galaxy_counter < 25000:
         counter = 0
         #################  Creates base arrays #######################      
         noise_base = np.copy(image_S)                                       
@@ -94,7 +94,7 @@ def main():
             counter += 1
             galaxy_counter += 1
             ################## Creates random Galaxies ####################
-            gauss_kernel = np.random.uniform(0.05,10, size=1)[0] *\
+            gauss_kernel = np.random.uniform(0.05,6, size=1)[0] *\
                            Gaussian2DKernel(2).array
             coords_gal = np.random.randint(20,len(image_S[0])-20, size=2)
             coord_array.append(coords_gal) 
