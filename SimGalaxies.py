@@ -26,7 +26,7 @@ def nearby_galaxies(local_fluxes, coords_input, coords_detected, wl, total_flux)
     """
     Appends the flux of detected galaxies to the total_flux array.
     """
-    r_ap = 0.5 * library.get_pixFWHM(wl)
+    r_ap = 1.4 * library.get_pixFWHM(wl)
     i = 0
     for coord_in in (coords_input):
         for coord_de in (coords_detected):
@@ -94,7 +94,7 @@ def main():
             counter += 1
             galaxy_counter += 1
             ################## Creates random Galaxies ####################
-            gauss_kernel = np.random.uniform(0.05,16, size=1)[0] *\
+            gauss_kernel = np.random.uniform(0.05,10, size=1)[0] *\
                            Gaussian2DKernel(2).array
             coords_gal = np.random.randint(20,len(image_S[0])-20, size=2)
             coord_array.append(coords_gal) 
@@ -133,7 +133,7 @@ def main():
         filt_n = library.filter_direct(wavelength, noise_base)
         
 		## Version of locator for completeness
-        n_sig = 2
+        n_sig = 3.5
         sigma_n, mean_n = library.get_gauss_sigma(filt_n)
         mask = np.zeros((len(filt_n[0]), len(filt_n)))
         mask[filt_n >= n_sig * sigma_n + mean_n] =\
@@ -165,21 +165,50 @@ def main():
     
     fig3 = plt.figure()
     ax = fig3.add_subplot(1,1,1)
-    ax.set_title('Completeness')
+    #ax.set_title('Completeness')
+    plt.ylabel("Effective completeness")
+    plt.xlabel("Input flux density [Jy]")
     
     ## Array of bins as in Oliver et al
     binboundaries = [0.02, 0.029,0.051,0.069,0.111,0.289,0.511]
     bincenter = [0.0238, 0.0375, 0.0589, 0.0859, 0.1662, 0.3741]
     
     
-    flux_hist_y, _ = np.histogram(flux_t_array, bins=binboundaries)
-    flux_hist_y_total, _ = np.histogram(flux_array, bins=binboundaries)
+    flux_hist_y, flux_x = np.histogram(flux_t_array, bins=20)
+    flux_hist_y_total, _ = np.histogram(flux_array, bins=20)
     f_h_y_t = flux_hist_y_total.astype(float)
     histograma = np.divide(flux_hist_y, f_h_y_t)
-    print histograma
-    plt.scatter(bincenter, histograma)
+    #plt.plot(flux_x[:-1], histograma, 'ko-')
     #ax.plot(flux_hist_x,flux_hist_y)
+    #plt.show()
+    
+    out_1, _ = np.histogram(flux_t_array, bins=binboundaries)
+    out_temp, _ = np.histogram(flux_array, bins=binboundaries)
+    out_2 = out_temp.astype(float)
+    correction = np.divide(out_1, out_2)
+    print "CORRECTION\n", correction
+    #plt.scatter(bincenter, histograma)
+    #plt.show()
+
+
+    ## Logarithmic completeness
+    log_boundaries = np.logspace(-2.5, 0., 15)
+    log_out_1, _ = np.histogram(flux_t_array, bins=log_boundaries)
+    log_out_temp, _ = np.histogram(flux_array, bins=log_boundaries)
+    log_out_2 = log_out_temp.astype(float)
+    correction = np.divide(log_out_1, log_out_2)
+    plt.plot(log_boundaries[:-1], correction, 'ko-')
     plt.show()
+    
+    #flux_hist_y, flux_x = np.histogram(flux_t_array, bins=binboundaries)
+    #flux_hist_y_total, _ = np.histogram(flux_array, bins=binboundaries)
+    #f_h_y_t = flux_hist_y_total.astype(float)
+    #histograma = np.divide(flux_hist_y, f_h_y_t)
+    #print histograma
+    #plt.scatter(bincenter, histograma)
+    #plt.show()
+
+    print "Binboundaries and bincenter ", binboundaries, "\n", bincenter
     
     #print "Clean integral = ", clean_me /900., ",with noise = ", noise_me/900.
     #print "Difference = ", diff/ 900.
@@ -200,11 +229,11 @@ def main():
     fig2 = plt.figure()
     ax = fig2.add_subplot(1,1,1)
     ax.scatter(flux_clean, photo_accuracy)
-    ax.set_title('Photometric accuracy')
+    #ax.set_title('Photometric accuracy')
     plt.show()
     #plt.ylabel("$\frac{F_{input}-F_{measured}}{F_{input}}$")
-    plt.ylabel("Normalized difference of flux")
-    plt.xlabel("Flux")
+    plt.ylabel("Effective accuracy")
+    plt.xlabel("Input flux density [Jy]")
     return 0
 
 if __name__ == '__main__':
