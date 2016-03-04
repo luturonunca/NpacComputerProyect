@@ -136,6 +136,11 @@ def main():
     ## literarute limits for histogram   
     binboundaries = [0.02, 0.029,0.051,0.069,0.111,0.289,0.511] 
     bincenter = [0.0238, 0.0375, 0.0589, 0.0859, 0.1662, 0.3741]
+    ## completenes correction
+    completeness = [ 0.41666667, 0.59090909, 0.68055556, 0.74752475,\
+                     0.89678135, 0.96076459]
+
+
     ## plot secction
     plt.close("all")
     fig = plt.figure()
@@ -151,7 +156,8 @@ def main():
             
             print "S = ",float(F_S[i]),"S^2.5 = ", bincenter[i]**2.5,\
                     "size",total_size_S
-            FF_S.append(float( F_S[i])*(bincenter[i]**2.5)/float(total_size_S))  
+            FF_S.append(float( F_S[i])*(bincenter[i]**2.5)/\
+                        (float(total_size_S)*completeness[i]))  
     ax = fig.add_subplot(3,1,1) 
     yerr = np.sqrt(FF_S)
     ax.errorbar(bincenter, FF_S, yerr=yerr, fmt='ko')
