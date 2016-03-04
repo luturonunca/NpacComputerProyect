@@ -102,7 +102,7 @@ def get_gauss_sigma(data):
     normal_x = bin_boundaries[:-1]/mx                                           
     x = normal_x * mx                                                           
     y = normal_y * my                                                           
-    fit, covariant = curve_fit(gaussian_fit, normal_x, normal_y, maxfev=2000)        
+    fit, _ = curve_fit(gaussian_fit, normal_x, normal_y, maxfev=2000)#p0=[-0.02/mx,1, 0])#, method='trf') #maxfev=1000   
     maxvalue = fit[0] * my                                                      
     background = fit[1] * mx                                                    
     dispersion = fit[2] * mx                                                    

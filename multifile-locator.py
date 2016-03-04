@@ -22,6 +22,7 @@ def file_traveler(path):
         for files in cop:                                                           
             files_array.append([path+fn+"/"+files,files])
     return files_array
+
 def compute_size_field(x,y,angle):
     size = x * y * (angle**2) * str_factor
     return size
@@ -31,7 +32,7 @@ def get_positions(fileinfo):
     mex = filter(fileinfo[1][-7],fileinfo[0])
     
     # Number of sigmas to be taken for the threshold
-    n_sig = 3
+    n_sig = 2
     sigma, mean = get_gauss_sigma(mex)
     
     mask= np.zeros((len(mex[0]), len(mex)))
@@ -60,7 +61,7 @@ def get_positions(fileinfo):
             else:
                 #print "Coordinates ", i, j, "Value ", mask_plot[j][i]
                 mask_plot, suma, ext, lumi = cluster_scan([i,j], mask_plot)
-                if suma < 5:
+                if suma < 1:
                     continue
                 else:
                     suma_array.append(suma)
@@ -88,70 +89,111 @@ def main():
     total_size_M = 0
     total_size_L = 0
     for j in range(len(files_array)):
+        # check range of view of file
         waverange =  files_array[j][1][-7]
-        above, fits_data, header = get_data_path(waverange,files_array[j][0], header=True)
+        # gets data and header
+        above, fits_data, header = get_data_path(waverange,files_array[j][0],\
+                                   header=True)
         image = above * fits_data
-        total_size_S += compute_size_field(len(image[0]),len(image),\
-                               abs(header['CDELT1']))
-        print header['CDELT1']
-        total_size_M += compute_size_field(len(image[0]),len(image),\
-                               abs(header['CDELT1']))
-        total_size_L += compute_size_field(len(image[0]),len(image),\
-                               abs(header['CDELT1']))
-        
-        #print len(image),len(image[0]), abs(header['CDELT1'])
-        dictionary = get_positions(files_array[j])
+        ### gets de dictionary and the coordinates of galaxies ###
+        ## fot the current file but first ignore problematic file
+        if files_array[j][1][0:6] == 'OD1347' and waverange == 'M':
+            continue
+        dictionary = get_positions(files_array[j])                              
         coordinates = dictionary['centroids']
-        for i in range(0, len(coordinates)):
-            flux = photometrySimple(image,coordinates[i],waverange)
-            if np.isnan(flux[2])== True:                                           
-                 continue  
-            if waverange == "S":
-                cont += 1
-                if np.isnan(flux[2])== True:
-                    continue
+        ### SHORT WAVELENGTH ###
+        if waverange == "S":
+            ###### sums the size of the field that is observed in sr #####
+            total_size_S += compute_size_field(len(image[0]),len(image),\
+                               abs(header['CDELT1']))
+            for i in range(0, len(coordinates)):
+                flux = photometrySimple(image,coordinates[i],waverange)
+                if np.isnan(flux[2])== True:                                    
+                    continue                                                    
                 flux_array_S.append(flux[2])
-            elif waverange == "M":
-                cont += 1      
+        
+        ### MEDIUM WAVELENGTH ### 
+        elif waverange == "M":
+            total_size_M += compute_size_field(len(image[0]),len(image),\
+                               abs(header['CDELT1']))
+            for i in range(0, len(coordinates)):                                
+                flux = photometrySimple(image,coordinates[i],waverange)
                 if np.isnan(flux[2])== True:                                    
-                    continue
+                    continue                                                    
                 flux_array_M.append(flux[2])
-
-            elif waverange == "L":                                                   
-                cont += 1           
+        
+        ### LONG WAVELENGTH ### 
+        elif waverange == "L":
+            total_size_L += compute_size_field(len(image[0]),len(image),\
+                               abs(header['CDELT1']))
+            print "imagened",len(image[0]),len(image)
+            for i in range(0, len(coordinates)):                                
+                flux = photometrySimple(image,coordinates[i],waverange)
                 if np.isnan(flux[2])== True:                                    
-                    continue
+                    continue                                                    
                 flux_array_L.append(flux[2])
+    
+    ## literarute limits for histogram   
     binboundaries = [0.02, 0.029,0.051,0.069,0.111,0.289,0.511] 
     bincenter = [0.0238, 0.0375, 0.0589, 0.0859, 0.1662, 0.3741]
+    ## plot secction
     plt.close("all")
-    plt.xscale("log")
+    fig = plt.figure()
+    plt.ylabel(r'$ N^3$',fontsize=16)    
+    plt.xlabel("Flux Density [Jy]")
+    plt.axis('off')
     F_S,_ = np.histogram(flux_array_S, bins=binboundaries )
-    print bincenter
+    print F_S
     FF_S = []
     FF_M = []
     FF_L = []
     for i in range(len(F_S)):
             
-            print float(F_S[i]), bincenter[i]**2.5, total_size_S
+            print "S = ",float(F_S[i]),"S^2.5 = ", bincenter[i]**2.5,\
+                    "size",total_size_S
             FF_S.append(float( F_S[i])*(bincenter[i]**2.5)/float(total_size_S))  
-    plt.plot(bincenter, FF_S, 'g^', markersize=20)
+    ax = fig.add_subplot(3,1,1) 
+    yerr = np.sqrt(FF_S)
+    ax.errorbar(bincenter, FF_S, yerr=yerr, fmt='ko')
+    #ax.plot(bincenter, FF_S, 'ko', markersize=10)
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    plt.ylabel(r'$dN/dSd\Omega x S^{2.5}$[sr$^{-1}$Jy$^{1.5}$]')
+    ax.text(0.3, 1600, r'250$\mu$')
+    #ax.set_xticks([])
     
     F_M, _ = np.histogram(flux_array_M, bins=binboundaries )                     
     print bincenter                                                         
     for i in range(len(F_M)):
             print total_size_M
             FF_M.append(float( F_M[i])*(bincenter[i]**2.5)/(total_size_M))
-    print FF_M        
-    plt.plot(bincenter, FF_M, 'r^', markersize=20)
+    print FF_M 
+    ax2 = fig.add_subplot(3,1,2) 
+    ax2.plot(bincenter, FF_M, 'ko', markersize=10)
+    ax2.set_xscale('log')
+    ax2.set_yscale('log')
+    plt.ylabel(r'$dN/dSd\Omega x S^{2.5}$[sr$^{-1}$Jy$^{1.5}$]')
+    ax2.text(0.3, 150, r'350$\mu$')
+    ax.set_xticklabels([])
+    ax2.set_xticklabels([])
+    xticklabels = ax.get_xticklabels() + ax2.get_xticklabels()
+    plt.setp(xticklabels, visible=False)
+    
 
 
     F_L,_ = np.histogram(flux_array_L, bins=binboundaries )                     
     print bincenter                                                             
     for i in range(len(F_L)):     
             FF_L.append(float( F_L[i])*(bincenter[i]**2.5)/float(total_size_L)) 
-    plt.plot(bincenter, FF_L, 'b^', markersize=20)
-    
+    ax3 = fig.add_subplot(3,1,3)  
+    ax3.plot(bincenter, FF_L, 'ko', markersize=10)
+    ax3.set_xscale('log')
+    ax3.set_yscale('log')
+    ax3.text(0.3, 1500, r'500$\mu$')
+    plt.ylabel(r'$dN/dSd\Omega x S^{2.5}$[sr$^{-1}$Jy$^{1.5}$]')
+    plt.xlabel('Flux Density [Jy]')
+    plt.subplots_adjust(hspace = 0,
+                        wspace = 0)
     plt.show()
     print FF_S
     print final_S, final_M, final_L
