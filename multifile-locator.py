@@ -88,24 +88,30 @@ def main():
     total_size_S = 0
     total_size_M = 0
     total_size_L = 0
+    
+    number_of_Sfields = 0
+    number_of_Mfields = 0
+    number_of_Lfields = 0
     for j in range(len(files_array)):
         # check range of view of file
         waverange =  files_array[j][1][-7]
         # gets data and header
         above, fits_data, header = get_data_path(waverange,files_array[j][0],\
                                    header=True)
+        print header['CDELT1'], files_array[j][1][-7]
         image = above * fits_data
         ### gets de dictionary and the coordinates of galaxies ###
         ## fot the current file but first ignore problematic file
-        if files_array[j][1][0:6] == 'OD1347' and waverange == 'M':
-            continue
         dictionary = get_positions(files_array[j])                              
         coordinates = dictionary['centroids']
         ### SHORT WAVELENGTH ###
+        
         if waverange == "S":
+            number_of_Sfields += 1
             ###### sums the size of the field that is observed in sr #####
             total_size_S += compute_size_field(len(image[0]),len(image),\
                                abs(header['CDELT1']))
+            print compute_size_field(len(image[0]),len(image),abs(header['CDELT1']))
             for i in range(0, len(coordinates)):
                 flux = photometrySimple(image,coordinates[i],waverange)
                 if np.isnan(flux[2])== True:                                    
@@ -114,6 +120,8 @@ def main():
         
         ### MEDIUM WAVELENGTH ### 
         elif waverange == "M":
+            print "coco", number_of_Mfields
+            number_of_Mfields += 1
             total_size_M += compute_size_field(len(image[0]),len(image),\
                                abs(header['CDELT1']))
             for i in range(0, len(coordinates)):                                
@@ -124,6 +132,7 @@ def main():
         
         ### LONG WAVELENGTH ### 
         elif waverange == "L":
+            number_of_Lfields += 1
             total_size_L += compute_size_field(len(image[0]),len(image),\
                                abs(header['CDELT1']))
             print "imagened",len(image[0]),len(image)
@@ -137,12 +146,14 @@ def main():
     binboundaries = [0.02, 0.029,0.051,0.069,0.111,0.289,0.511] 
     bincenter = [0.0238, 0.0375, 0.0589, 0.0859, 0.1662, 0.3741]
     ## completenes correction
-    completeness = [ 0.41666667, 0.59090909, 0.68055556, 0.74752475,\
-                     0.89678135, 0.96076459]
-
-
+    completeness = [0.5207333, 0.91823224, 0.98095451, 0.98438088,\
+                    0.98823266, 0.99232246]
+    completenessM = [0.50523013, 0.825, 0.925, 0.94548287,\
+                    0.96344454, 0.97344334]
+    completenessL = [0.514862, 0.60981912, 0.71747212, 0.83818626,\
+                    0.87421197, 0.884297]
     ## plot secction
-    plt.close("all")
+    #plt.close("all")
     fig = plt.figure()
     plt.ylabel(r'$ N^3$',fontsize=16)    
     plt.xlabel("Flux Density [Jy]")
@@ -152,29 +163,47 @@ def main():
     FF_S = []
     FF_M = []
     FF_L = []
+    ####### SHORT WAVELENGTH #######
+    yerr1 = np.sqrt(F_S)
     for i in range(len(F_S)):
-            
-            print "S = ",float(F_S[i]),"S^2.5 = ", bincenter[i]**2.5,\
-                    "size",total_size_S
-            FF_S.append(float( F_S[i])*(bincenter[i]**2.5)/\
-                        (float(total_size_S)*completeness[i]))  
-    ax = fig.add_subplot(3,1,1) 
-    yerr = np.sqrt(FF_S)
-    ax.errorbar(bincenter, FF_S, yerr=yerr, fmt='ko')
+            yerr1[i]=(float(yerr1[i])*(bincenter[i]**2.5)/\
+                        (float(total_size_S)))
+            FF_S.append(float( F_S[i])*(bincenter[i]**2.5)*completeness[i]/\
+                       (float(total_size_S)))  
+    ax = fig.add_subplot(3,1,1)
+    ## note that this is a relative error 
+    compleatness_err = [65.874457619525543,87.475341287321271, \
+                        90.413610240199276,90.571375168979301, \
+                        90.748400353211011,90.935987559015004]
+    yerr= [0,0,0,0,0,0]
+    for m in range(len(completeness)):
+            yerr[m] = np.sqrt(yerr1[m]**2 + compleatness_err[m]**2)
+    
+    ax.errorbar(bincenter[:-1], FF_S[:-1], yerr=yerr[:-1], fmt='ko', markersize=7)
     #ax.plot(bincenter, FF_S, 'ko', markersize=10)
     ax.set_xscale('log')
     ax.set_yscale('log')
     plt.ylabel(r'$dN/dSd\Omega x S^{2.5}$[sr$^{-1}$Jy$^{1.5}$]')
     ax.text(0.3, 1600, r'250$\mu$')
     #ax.set_xticks([])
-    
+   
+
+
+    ####### MEDIUM WAVELENGTH ####### 
     F_M, _ = np.histogram(flux_array_M, bins=binboundaries )                     
-    print bincenter                                                         
+    yerr2 = np.sqrt(F_M)
+    
+    print bincenter     
+
     for i in range(len(F_M)):
-            print total_size_M
-            FF_M.append(float( F_M[i])*(bincenter[i]**2.5)/(total_size_M))
-    print FF_M 
+            yerr2[i]=(float(yerr2[i])*(bincenter[i]**2.5)/\
+                        (float(total_size_M)))
+            FF_M.append(float( F_M[i])*(bincenter[i]**2.5)*completeness[i]/\
+                        (total_size_M))
     ax2 = fig.add_subplot(3,1,2) 
+    completenessM_err =[45.881647111526703, 58.630196997792872,\
+                        62.081935107297248, 62.765531610377785,\
+                        63.358916104996617, 63.686842571026133]
     ax2.plot(bincenter, FF_M, 'ko', markersize=10)
     ax2.set_xscale('log')
     ax2.set_yscale('log')
