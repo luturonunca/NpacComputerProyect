@@ -17,78 +17,37 @@ plt.ion()
 
 
 def get_filename(w):
-    path = "/home/abeelen/Herschel/DDT_mustdo_5/PLCK_SZ_G004.5-19.6-1/"
-    filename = "OD1271_0x50012da8L_SpirePhotoLargeScan_PLCK_SZ_G004.5-19.6-1_destriped_P"\
+    path = "/home/abeelen/Herschel/DDT_mustdo_5/PLCK_SZ_G155.3-68.4/"
+    filename = "OD1330_0x50013cc6L_SpirePhotoLargeScan_PLCK_SZ_G155.3-68.4_destriped_P"\
     +w+"W.fits"
     return path+filename
 
-def nearby_galaxies(fluxes, coords_input, coords_detected, wl):
+def nearby_galaxies(local_fluxes, coords_input, coords_detected, wl, total_flux):
     """
-    A function that returns the number of input galaxies that are nearby to
-    coord_detected.
+    Appends the flux of detected galaxies to the total_flux array.
     """
-
+    r_ap = 0.5 * library.get_pixFWHM(wl)
+    i = 0
     for coord_in in (coords_input):
         for coord_de in (coords_detected):
-            
-
-
-
-
-
-
-#    nearby = []
-#    n_nearby = []
-#    nearby_coords = []
-#    n_nearby_coords = []
-#    r_ap = 2.5 * library.get_pixFWHM(wl)
-#
-#    for coord_in in (coords_input):
-#        for coord_de in (coords_detected):
-#            if abs(coord_de[0] - coord_in[0]) > r_ap\
-#                                    or abs(coord_de[1] - coord_in[1]) > r_ap:
-#                continue
-#            else:
-#                nearby.append(True)
-#                nearby_coords.append(coord_in)
-#    
-#    for i in range(len(coords_input)):
-#        for j in range(len(nearby_coords)):
-#            if j == i:
-#                continue
-#            else:
-#                n_nearby.append
-#
-#
-#    if len(nearby) == len(n_nearby):
-#        return nearby, nearby_coords
-#    else:
-#        #Merge arrays JOTA
-#        for k in range(len(n_nearby))
-#            #kkkkkkkk
-#
-#
-#    return nearby, coords_input
-
-#def nearby(coords_input, coords_detected, wl):
-#    nearby = False
-#    r_ap = 2.5 * library.get_pixFWHM(wl)
-#    for coord_de in (coords_detected):
-#        if abs(coord_de[0] - coords_input[0]) > r_ap\
-#                                or abs(coord_de[1] - coords_input[1]) > r_ap:
-#            continue
-#        else:
-#            nearby = True
-#    return nearby
-
+            if abs(coord_de[0] - coord_in[0]) > r_ap\
+                                    or abs(coord_de[1] - coord_in[1]) > r_ap:
+                continue
+            else:
+                total_flux.append(local_fluxes[i])                                  
+        i += 1
+    
+    return total_flux
+                    
 def main():
     fig = plt.figure()
 
     
+    wavelength = "L"
     ### SHORT WAVELENGTH
-    above_S, fits_data_S = library.get_data("S")
+    above_S, fits_data_S = library.get_data(wavelength)
     image_S = above_S * fits_data_S
-    _ , header_S = fits.getdata(get_filename("S"),header=True)
+    _ , header_S = fits.getdata(get_filename(wavelength),header=True)
     # Create mask without NaN
     m_array_S = library.create_marray(fits_data_S)
    
@@ -117,11 +76,11 @@ def main():
     flux_clean = []
     ## Initialize array for completeness plot it'll contain pairs of
     ## jansky, ratio.
-    ratio = []
     flux_array = []
-    matching_array = []
+    flux_t_array = []
+    popo = 0
 
-    while galaxy_counter < 1:
+    while galaxy_counter < 10000:
         counter = 0
         #################  Creates base arrays #######################      
         noise_base = np.copy(image_S)                                       
@@ -131,16 +90,16 @@ def main():
         local_fluxes = []
         local_coords = []
         
-        while counter < 9:
+        while counter < 4:
             counter += 1
             galaxy_counter += 1
             ################## Creates random Galaxies ####################
-            #gauss_kernel = 5 * Gaussian2DKernel(2).array
-            #witdth_rand = np.random.randint(1,3)
-            gauss_kernel = np.random.uniform(0.1,20, size=1)[0] *\
+            gauss_kernel = np.random.uniform(0.05,16, size=1)[0] *\
                            Gaussian2DKernel(2).array
             coords_gal = np.random.randint(20,len(image_S[0])-20, size=2)
             coord_array.append(coords_gal) 
+            
+            # Completeness
             local_coords.append(coords_gal) 
             # To plot completeness, we need flux value of sim galaxy
             local_fluxes.append(np.amax(gauss_kernel))
@@ -155,8 +114,8 @@ def main():
                     base[coords_gal[1]+j-8][coords_gal[0]+i-8] += \
                                             gauss_kernel[i][j]
             ################## integrates both w noise n w'out ############
-            integ_clean = library.photometrySimple(base,coords_gal,"S")
-            integ_noise = library.photometrySimple(noise_base,coords_gal,"S")
+            integ_clean = library.photometrySimple(base,coords_gal,wavelength)
+            integ_noise = library.photometrySimple(noise_base,coords_gal,wavelength)
 
             if math.isnan(integ_noise[1]) is False:
                 noise_me += integ_noise[1]
@@ -171,7 +130,7 @@ def main():
         
         
         ## Completeness part
-        filt_n = library.filter_direct("S", noise_base)
+        filt_n = library.filter_direct(wavelength, noise_base)
         
 		## Version of locator for completeness
         n_sig = 2
@@ -183,8 +142,6 @@ def main():
         suma_array = []
         centroides_array = []
         lumi_array = []                                                         
-        #print "Length mask_plot ", len(mask),\
-        #      "and mask_plot[1]", len(mask[1])                             
                                                                             
         for l in range(0, len(mask)):                                      
             for k in range(0, len(mask[1])):                               
@@ -192,34 +149,40 @@ def main():
                     continue                                                    
                 else:                                                           
                     mask, suma, ext, lumi = library.cluster_scan([k,l], mask) 
-                    if suma < 5:                                                
-                        continue                                                
-                    else:                                                       
-                        suma_array.append(suma)                                 
-                        centroides_array.append(library.centroides(ext))       
-                        lumi_array.append(lumi)
+                    suma_array.append(suma)                                 
+                    centroides_array.append(library.centroides(ext))       
+                    lumi_array.append(lumi)
         
         
-        matched, unmatched = nearby_galaxies(local_fluxes, local_coords, centroides_array, "S")
-        print "List unmatched ", unmatched
-        # little loop to append coherently in big array
-        for m in range(0, len(matched)):
-            matching_array.append(matched[m])
-        print "Flux and matching: ", flux_array, matching_array
-
-    print "Lengths of flux and matching: ", len(flux_array), len(matching_array)
+        flux_t_array = nearby_galaxies(local_fluxes, local_coords,\
+                                       centroides_array, wavelength, flux_t_array)
     
-
-#    print "\n## CENTROIDS ##\n Centroids and lumi :", centroides_array,\
-#           lumi_array, "Length of centroids: ", len(centroides_array)
-    #print filtered_noise
-    #print base_noise
     
-    #print "\n\n##Photo accuracy##\n\n Accuracy: ", photo_accuracy,\
-    #      "Input flux: ", flux_clean
+    ## Printing
+    print "\nLEN FLUX ARRAY\n", len(flux_array)
+    print "\nLEN FlUX T ARRAY\n", len(flux_t_array)
+    print "\nELEMENT OF FLUX ARRAY\n", flux_array[0]
     
-    print "Clean integral = ", clean_me /900., ",with noise = ", noise_me/900.
-    print "Difference = ", diff/ 900.
+    fig3 = plt.figure()
+    ax = fig3.add_subplot(1,1,1)
+    ax.set_title('Completeness')
+    
+    ## Array of bins as in Oliver et al
+    binboundaries = [0.02, 0.029,0.051,0.069,0.111,0.289,0.511]
+    bincenter = [0.0238, 0.0375, 0.0589, 0.0859, 0.1662, 0.3741]
+    
+    
+    flux_hist_y, _ = np.histogram(flux_t_array, bins=binboundaries)
+    flux_hist_y_total, _ = np.histogram(flux_array, bins=binboundaries)
+    f_h_y_t = flux_hist_y_total.astype(float)
+    histograma = np.divide(flux_hist_y, f_h_y_t)
+    print histograma
+    plt.scatter(bincenter, histograma)
+    #ax.plot(flux_hist_x,flux_hist_y)
+    plt.show()
+    
+    #print "Clean integral = ", clean_me /900., ",with noise = ", noise_me/900.
+    #print "Difference = ", diff/ 900.
     #print "pix ", pix[0], pix[1] 
     #ax_wcs.set_xlim(pix0[0], pix[0])
     #ax_wcs.set_ylim(pix0[1], pix[1])
