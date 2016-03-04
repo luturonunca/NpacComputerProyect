@@ -17,8 +17,8 @@ plt.ion()
 
 
 def get_filename(w):
-    path = "/home/abeelen/Herschel/DDT_mustdo_5/PLCK_SZ_G155.3-68.4/"
-    filename = "OD1330_0x50013cc6L_SpirePhotoLargeScan_PLCK_SZ_G155.3-68.4_destriped_P"\
+    path = "/home/abeelen/Herschel/DDT_mustdo_5/PLCK_SZ_G334.8-38.0/"
+    filename = "OD1281_0x50012fd8L_SpirePhotoLargeScan_PLCK_SZ_G334.8-38.0_destriped_P"\
     +w+"W.fits"
     return path+filename
 
@@ -43,7 +43,7 @@ def main():
     fig = plt.figure()
 
     
-    wavelength = "L"
+    wavelength = "S"
     ### SHORT WAVELENGTH
     above_S, fits_data_S = library.get_data(wavelength)
     image_S = above_S * fits_data_S
